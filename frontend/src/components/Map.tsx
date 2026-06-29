@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import "leaflet/dist/leaflet.css";
 import styles from "./Map.module.css";
 
 interface Props {
@@ -16,7 +17,6 @@ export default function Map({ bbox }: Props) {
     if (!containerRef.current || mapRef.current) return;
 
     import("leaflet").then((L) => {
-      import("leaflet/dist/leaflet.css");
       const m = L.map(containerRef.current!).setView([53.5, -8], 6);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap contributors",
