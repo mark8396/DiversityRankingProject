@@ -17,7 +17,7 @@ Vercel (Next.js frontend)  →  Render (Flask REST API)
 - **CLI**: `leaderboard.py` — standalone script, shares core/ modules with Flask
 
 ## Live URLs
-- Frontend (Vercel): to be added after first Vercel deploy
+- Frontend (Vercel): https://diversity-ranking-project.vercel.app
 - Backend (Render): https://bird-diversity-ranking.onrender.com
 
 ## Tech stack
