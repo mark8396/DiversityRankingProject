@@ -1,0 +1,64 @@
+.wrapper {
+  margin-top: 1.25rem;
+}
+
+.count {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.label {
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  margin-top: 0.3rem;
+}
+
+.location {
+  font-size: 0.85rem;
+  color: var(--color-secondary);
+  margin-top: 0.15rem;
+  font-style: italic;
+}
+
+.details {
+  margin-top: 1rem;
+}
+
+.summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--color-primary);
+  font-weight: 500;
+  user-select: none;
+}
+
+.summary:hover {
+  color: var(--color-primary-dark);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.3rem 1rem;
+  margin-top: 0.75rem;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.82rem;
+}
+
+.comName {
+  font-weight: 500;
+}
+
+.sciName {
+  font-style: italic;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+}

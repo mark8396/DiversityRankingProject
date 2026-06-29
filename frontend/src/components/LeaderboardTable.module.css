@@ -1,0 +1,67 @@
+.wrapper {
+  margin-top: 1.25rem;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  margin-bottom: 0.75rem;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table thead tr {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.table th {
+  padding: 0.65rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.thRank { width: 60px; }
+.thCount { text-align: right; width: 100px; }
+
+.row td {
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.rank1 td { background: var(--color-rank1); }
+.rank2 td { background: var(--color-rank2); }
+.rank3 td { background: var(--color-rank3); }
+
+.rankCell {
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.locationCell {
+  color: var(--color-text);
+}
+
+.countCell {
+  text-align: right;
+  font-size: 1rem;
+  color: var(--color-primary);
+}
+
+.error {
+  font-style: italic;
+  color: var(--color-error);
+  font-weight: normal;
+  font-size: 0.85rem;
+}

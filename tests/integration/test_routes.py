@@ -1,5 +1,5 @@
 import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import pytest
 
 
@@ -15,14 +15,25 @@ SAMPLE_OBS = [
 ]
 
 
-class TestIndexRoute:
-    def test_get_returns_200(self, client):
-        res = client.get("/")
+class TestCORS:
+    def test_cors_header_present_on_api_response(self, client):
+        with patch("app.nominatim.search_place", return_value=SKIBBEREEN_PLACE):
+            res = client.get(
+                "/api/search?q=Skibbereen",
+                headers={"Origin": "http://localhost:3000"},
+            )
         assert res.status_code == 200
+        assert "Access-Control-Allow-Origin" in res.headers
 
-    def test_response_is_html(self, client):
-        res = client.get("/")
-        assert b"<!DOCTYPE html>" in res.data or b"<html" in res.data
+    def test_cors_header_present_on_preflight(self, client):
+        res = client.options(
+            "/api/search",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert res.status_code in (200, 204)
 
 
 class TestSearchRoute:
@@ -114,15 +125,7 @@ class TestLeaderboardRoute:
         assert res.status_code == 400
 
     def test_happy_path_returns_sorted_leaderboard(self, client):
-        def fake_place(name):
-            return {**SKIBBEREEN_PLACE, "display_name": name}
-
-        def fake_obs(lat, lon, radius, back_days):
-            if "Bantry" in str(lat):
-                return SAMPLE_OBS * 3
-            return SAMPLE_OBS
-
-        with patch("app.nominatim.search_place", side_effect=fake_place):
+        with patch("app.nominatim.search_place", return_value=SKIBBEREEN_PLACE):
             with patch("app.ebird.get_observations_in_area", return_value=SAMPLE_OBS):
                 res = client.post("/api/leaderboard", json={"towns": ["Skibbereen", "Bantry"], "back": 30})
 
@@ -146,16 +149,7 @@ class TestLeaderboardRoute:
         assert errors[0]["town"] == "GhostTown"
 
     def test_leaderboard_sorted_descending_by_count(self, client):
-        places = {
-            "TownA": {**SKIBBEREEN_PLACE, "display_name": "TownA"},
-            "TownB": {**SKIBBEREEN_PLACE, "display_name": "TownB"},
-        }
-        obs_by_town = {
-            "TownA": SAMPLE_OBS,
-            "TownB": SAMPLE_OBS * 2,
-        }
-
-        with patch("app.nominatim.search_place", side_effect=lambda n: places.get(n)):
+        with patch("app.nominatim.search_place", return_value=SKIBBEREEN_PLACE):
             with patch("app.ebird.get_observations_in_area", return_value=SAMPLE_OBS):
                 res = client.post("/api/leaderboard", json={"towns": ["TownA", "TownB"], "back": 30})
 

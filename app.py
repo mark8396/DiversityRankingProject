@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import os
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,11 +12,7 @@ import core.ebird as ebird
 from core.geo_utils import bbox_centroid, bbox_radius_km
 
 app = Flask(__name__)
-
-
-@app.route("/")
-def index():
-    return render_template("index.html")
+CORS(app, origins=["http://localhost:3000", "https://*.vercel.app"])
 
 
 @app.route("/api/search")
