@@ -1,0 +1,23 @@
+[
+  {
+    "place_id": 123456,
+    "osm_type": "relation",
+    "osm_id": 654321,
+    "display_name": "Skibbereen, County Cork, Munster, Ireland",
+    "lat": "51.5556",
+    "lon": "-9.2595",
+    "boundingbox": ["51.5356", "51.5756", "-9.2995", "-9.2195"],
+    "geojson": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [-9.2995, 51.5356],
+          [-9.2195, 51.5356],
+          [-9.2195, 51.5756],
+          [-9.2995, 51.5756],
+          [-9.2995, 51.5356]
+        ]
+      ]
+    }
+  }
+]

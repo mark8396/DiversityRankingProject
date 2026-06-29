@@ -1,0 +1,10 @@
+[
+  {"speciesCode": "gyrfal", "comName": "Gyrfalcon", "sciName": "Falco rusticolus", "lat": 51.55, "lng": -9.26, "obsDt": "2026-06-01", "subId": "S001"},
+  {"speciesCode": "eurwig", "comName": "Eurasian Wigeon", "sciName": "Mareca penelope", "lat": 51.54, "lng": -9.27, "obsDt": "2026-06-01", "subId": "S001"},
+  {"speciesCode": "hoopoe", "comName": "Hoopoe", "sciName": "Upupa epops", "lat": 51.56, "lng": -9.25, "obsDt": "2026-06-02", "subId": "S002"},
+  {"speciesCode": "commoo", "comName": "Common Moorhen", "sciName": "Gallinula chloropus", "lat": 51.545, "lng": -9.265, "obsDt": "2026-06-02", "subId": "S002"},
+  {"speciesCode": "gyrfal", "comName": "Gyrfalcon", "sciName": "Falco rusticolus", "lat": 51.55, "lng": -9.26, "obsDt": "2026-06-03", "subId": "S003"},
+  {"speciesCode": "outsid1", "comName": "Outside Bird", "sciName": "Outsidia fictus", "lat": 99.0, "lng": 99.0, "obsDt": "2026-06-03", "subId": "S004"},
+  {"speciesCode": "mallard", "comName": "Mallard", "sciName": "Anas platyrhynchos", "lat": 51.55, "lng": -9.28, "obsDt": "2026-06-04", "subId": "S005"},
+  {"speciesCode": "nolatlng", "comName": "No Coords Bird", "sciName": "Noloc fictus", "obsDt": "2026-06-04", "subId": "S006"}
+]

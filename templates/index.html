@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bird Diversity Ranking</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Bird Diversity Ranking</h1>
+    <div class="subtitle">eBird species counts by town or village &mdash; powered by OpenStreetMap &amp; eBird</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Single location search -->
+  <section>
+    <h2>Search a Location</h2>
+    <div class="row">
+      <input type="text" id="search-input" placeholder="e.g. Skibbereen, Ireland" autocomplete="off">
+      <button id="search-btn">Search</button>
+    </div>
+    <div id="map"></div>
+    <div id="search-status" class="msg"></div>
+
+    <div class="back-row">
+      <label for="back-days">Days back:</label>
+      <input type="number" id="back-days" value="30" min="1" max="30">
+      <button id="species-btn" disabled>Get Species Count</button>
+    </div>
+
+    <div id="species-result"></div>
+  </section>
+
+  <!-- Leaderboard -->
+  <section>
+    <h2>Leaderboard &mdash; Compare Multiple Locations</h2>
+    <p class="msg" style="margin-bottom:0.75rem">Enter one town or village per line.</p>
+    <textarea id="lb-towns" rows="6" placeholder="Skibbereen, Ireland&#10;Bantry, Ireland&#10;Kinsale, Ireland"></textarea>
+    <div class="back-row" style="margin-top:0.75rem">
+      <label for="lb-back">Days back:</label>
+      <input type="number" id="lb-back" value="30" min="1" max="30">
+      <button id="lb-btn">Build Leaderboard</button>
+    </div>
+    <div id="lb-status" class="msg"></div>
+    <div id="lb-result"></div>
+  </section>
+
+</main>
+
+<script>
+  // Map setup
+  const map = L.map('map').setView([53.5, -8], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 18,
+  }).addTo(map);
+  let bboxRect = null;
+  let currentBbox = null;
+
+  function showBbox(bbox) {
+    if (bboxRect) map.removeLayer(bboxRect);
+    // bbox: [min_lat, max_lat, min_lon, max_lon]
+    const bounds = [[bbox[0], bbox[2]], [bbox[1], bbox[3]]];
+    bboxRect = L.rectangle(bounds, { color: '#1a6e2e', weight: 2, fillOpacity: 0.1 }).addTo(map);
+    map.fitBounds(bounds, { padding: [20, 20] });
+  }
+
+  // Search handler
+  const searchBtn = document.getElementById('search-btn');
+  const speciesBtn = document.getElementById('species-btn');
+  const searchInput = document.getElementById('search-input');
+  const searchStatus = document.getElementById('search-status');
+  const speciesResult = document.getElementById('species-result');
+
+  searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchBtn.click(); });
+
+  searchBtn.addEventListener('click', async () => {
+    const q = searchInput.value.trim();
+    if (!q) return;
+    searchBtn.disabled = true;
+    speciesBtn.disabled = true;
+    searchStatus.textContent = 'Searching…';
+    searchStatus.className = 'msg';
+    speciesResult.innerHTML = '';
+
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (!res.ok) { searchStatus.textContent = data.error; searchStatus.className = 'msg error-msg'; return; }
+      searchStatus.textContent = `Found: ${data.display_name}`;
+      currentBbox = data.bbox;
+      showBbox(data.bbox);
+      speciesBtn.disabled = false;
+    } catch (e) {
+      searchStatus.textContent = 'Network error. Please try again.';
+      searchStatus.className = 'msg error-msg';
+    } finally {
+      searchBtn.disabled = false;
+    }
+  });
+
+  speciesBtn.addEventListener('click', async () => {
+    const q = searchInput.value.trim();
+    const back = document.getElementById('back-days').value;
+    speciesBtn.disabled = true;
+    speciesResult.innerHTML = '<p class="msg">Fetching species data from eBird…</p>';
+
+    try {
+      const res = await fetch(`/api/species?q=${encodeURIComponent(q)}&back=${back}`);
+      const data = await res.json();
+      if (!res.ok) { speciesResult.innerHTML = `<p class="msg error-msg">${data.error}</p>`; return; }
+      renderSpecies(data);
+    } catch (e) {
+      speciesResult.innerHTML = '<p class="msg error-msg">Network error. Please try again.</p>';
+    } finally {
+      speciesBtn.disabled = false;
+    }
+  });
+
+  function renderSpecies(data) {
+    const grid = data.species_list.map(s =>
+      `<div class="species-item"><strong>${s.comName}</strong><br><span class="sci">${s.sciName}</span></div>`
+    ).join('');
+    speciesResult.innerHTML = `
+      <div class="species-count">${data.species_count}</div>
+      <div class="species-label">unique species recorded in the last ${data.back_days} day${data.back_days === 1 ? '' : 's'}</div>
+      ${data.species_count > 0 ? `<details><summary>Show species list</summary><div class="species-grid">${grid}</div></details>` : ''}
+    `;
+  }
+
+  // Leaderboard
+  document.getElementById('lb-btn').addEventListener('click', async () => {
+    const raw = document.getElementById('lb-towns').value;
+    const towns = raw.split('\n').map(t => t.trim()).filter(Boolean);
+    if (!towns.length) return;
+
+    const back = parseInt(document.getElementById('lb-back').value, 10);
+    const lbBtn = document.getElementById('lb-btn');
+    const lbStatus = document.getElementById('lb-status');
+    const lbResult = document.getElementById('lb-result');
+
+    lbBtn.disabled = true;
+    lbStatus.textContent = `Looking up ${towns.length} location${towns.length === 1 ? '' : 's'}… this may take a moment.`;
+    lbStatus.className = 'msg';
+    lbResult.innerHTML = '';
+
+    try {
+      const res = await fetch('/api/leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ towns, back }),
+      });
+      const data = await res.json();
+      if (!res.ok) { lbStatus.textContent = data.error; lbStatus.className = 'msg error-msg'; return; }
+      lbStatus.textContent = `Results for last ${data.back_days} days:`;
+      renderLeaderboard(data.leaderboard);
+    } catch (e) {
+      lbStatus.textContent = 'Network error. Please try again.';
+      lbStatus.className = 'msg error-msg';
+    } finally {
+      lbBtn.disabled = false;
+    }
+  });
+
+  function renderLeaderboard(rows) {
+    const lbResult = document.getElementById('lb-result');
+    if (!rows.length) { lbResult.innerHTML = '<p class="msg">No results.</p>'; return; }
+    const trs = rows.map(r => {
+      const countCell = r.error
+        ? `<td class="error-cell">${r.error}</td>`
+        : `<td>${r.species_count}</td>`;
+      return `<tr class="rank-${r.rank}"><td>${r.rank}</td><td>${r.display_name || r.town}</td>${countCell}</tr>`;
+    }).join('');
+    lbResult.innerHTML = `
+      <table>
+        <thead><tr><th>#</th><th>Location</th><th>Species</th></tr></thead>
+        <tbody>${trs}</tbody>
+      </table>
+    `;
+  }
+</script>
+</body>
+</html>
