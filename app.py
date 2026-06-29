@@ -12,7 +12,7 @@ import core.ebird as ebird
 from core.geo_utils import bbox_centroid, bbox_radius_km
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000", "https://*.vercel.app"])
+CORS(app, origins=["http://localhost:3000", r"https://.*\.vercel\.app"])
 
 
 @app.route("/api/search")
