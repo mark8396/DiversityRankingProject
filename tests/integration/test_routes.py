@@ -25,6 +25,15 @@ class TestCORS:
         assert res.status_code == 200
         assert "Access-Control-Allow-Origin" in res.headers
 
+    def test_cors_allows_vercel_origin(self, client):
+        with patch("app.nominatim.search_place", return_value=SKIBBEREEN_PLACE):
+            res = client.get(
+                "/api/search?q=Skibbereen",
+                headers={"Origin": "https://diversity-ranking-project.vercel.app"},
+            )
+        assert res.status_code == 200
+        assert "Access-Control-Allow-Origin" in res.headers
+
     def test_cors_header_present_on_preflight(self, client):
         res = client.options(
             "/api/search",
