@@ -181,6 +181,33 @@ class TestLeaderboardRoute:
                     res = client.post("/api/leaderboard", json={"towns": ["Skibbereen"], "back": 30})
         assert res.status_code == 200
 
+    def test_three_towns_all_processed_with_parallel_ebird(self, client):
+        with patch("app.nominatim.search_place", return_value=SKIBBEREEN_PLACE):
+            with patch("app.ebird.get_observations_in_area", return_value=SAMPLE_OBS):
+                with patch("app.db.save_cache"):
+                    res = client.post(
+                        "/api/leaderboard",
+                        json={"towns": ["TownA", "TownB", "TownC"], "back": 30},
+                    )
+        assert res.status_code == 200
+        data = res.get_json()
+        assert len(data["leaderboard"]) == 3
+        assert all(r["species_count"] is not None for r in data["leaderboard"])
+        assert {r["rank"] for r in data["leaderboard"]} == {1, 2, 3}
+
+    def test_ebird_runtime_error_in_parallel_produces_error_entry(self, client):
+        with patch("app.nominatim.search_place", return_value=SKIBBEREEN_PLACE):
+            with patch("app.ebird.get_observations_in_area", side_effect=RuntimeError("API key invalid")):
+                with patch("app.db.save_cache"):
+                    res = client.post(
+                        "/api/leaderboard",
+                        json={"towns": ["Skibbereen"], "back": 30},
+                    )
+        assert res.status_code == 200
+        data = res.get_json()
+        assert data["leaderboard"][0]["error"] is not None
+        assert data["leaderboard"][0]["species_count"] is None
+
 
 class TestLeaderboardCachedRoute:
     def test_returns_empty_when_no_cache(self, client):
