@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 import requests
 from core.geo_utils import point_in_bbox
 
@@ -36,11 +37,18 @@ def get_observations_in_area(
         "includeProvisional": "true",
     }
     headers = {"X-eBirdApiToken": _api_key()}
-    response = requests.get(f"{_EBIRD_BASE}/data/obs/geo/recent", params=params, headers=headers, timeout=15)
-    if response.status_code == 401:
-        raise RuntimeError("eBird API key is invalid or expired (HTTP 401)")
-    response.raise_for_status()
-    return response.json()
+    for attempt in range(3):
+        response = requests.get(
+            f"{_EBIRD_BASE}/data/obs/geo/recent", params=params, headers=headers, timeout=15
+        )
+        if response.status_code == 401:
+            raise RuntimeError("eBird API key is invalid or expired (HTTP 401)")
+        if response.status_code == 429:
+            time.sleep(2 ** attempt)  # 1 s, 2 s, 4 s
+            continue
+        response.raise_for_status()
+        return response.json()
+    raise RuntimeError("eBird API rate limit exceeded after retries (HTTP 429)")
 
 
 def count_unique_species(observations: list[dict], bbox: list[float]) -> tuple[int, list[dict]]:

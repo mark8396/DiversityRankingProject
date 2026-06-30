@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import os
+import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -127,10 +128,10 @@ def api_leaderboard():
             observations = ebird.get_observations_in_area(center_lat, center_lon, radius_km, back_days=back)
             count, _ = ebird.count_unique_species(observations, bbox)
             return {"town": town_name, "display_name": place["display_name"], "species_count": count}
-        except RuntimeError as exc:
+        except (RuntimeError, requests.exceptions.HTTPError) as exc:
             return {"town": town_name, "display_name": place["display_name"], "species_count": None, "error": str(exc)}
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         results = list(executor.map(fetch_town, geocoded))
 
     results.sort(key=lambda r: (r["species_count"] is None, -(r["species_count"] or 0)))

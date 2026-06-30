@@ -73,6 +73,22 @@ class TestGetObservationsInArea:
         with pytest.raises(RuntimeError, match="EBIRD_API_KEY"):
             ebird_module.get_observations_in_area(51.55, -9.26, 5.0)
 
+    def test_429_retries_and_succeeds(self, ebird_fixture):
+        rate_limited = _mock_response({}, status_code=429)
+        success = _mock_response(ebird_fixture)
+        with patch("core.ebird.requests.get", side_effect=[rate_limited, success]):
+            with patch("core.ebird.time.sleep") as mock_sleep:
+                result = ebird_module.get_observations_in_area(51.55, -9.26, 5.0)
+        assert result == ebird_fixture
+        mock_sleep.assert_called_once_with(1)  # 2**0 = 1 s on first retry
+
+    def test_429_three_times_raises_runtime_error(self):
+        rate_limited = _mock_response({}, status_code=429)
+        with patch("core.ebird.requests.get", return_value=rate_limited):
+            with patch("core.ebird.time.sleep"):
+                with pytest.raises(RuntimeError, match="429"):
+                    ebird_module.get_observations_in_area(51.55, -9.26, 5.0)
+
 
 class TestCountUniqueSpecies:
     def test_deduplicates_species(self, ebird_fixture):
