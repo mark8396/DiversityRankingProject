@@ -27,6 +27,12 @@ export default function Navbar() {
           >
             Leaderboard
           </Link>
+          <Link
+            href="/compare"
+            className={`${styles.link} ${pathname === "/compare" ? styles.active : ""}`}
+          >
+            Compare
+          </Link>
         </nav>
       </div>
     </header>
