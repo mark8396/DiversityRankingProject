@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import os
+import threading
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -143,6 +144,53 @@ def api_leaderboard():
         pass  # Cache write failure is non-fatal
 
     return jsonify({"leaderboard": results, "back_days": back})
+
+
+_SEED_TOWNS = [
+    "Dublin", "Belfast", "Cork", "Limerick", "Galway", "Derry",
+    "Newtownabbey", "Bangor, Northern Ireland", "Waterford", "Lisburn", "Drogheda",
+    "Dundalk", "Swords", "Navan, Ireland", "Bray, Wicklow", "Ballymena", "Newtownards",
+    "Lurgan", "Carrickfergus", "Ennis", "Newry", "Carlow", "Kilkenny",
+    "Naas", "Tralee", "Antrim, Northern Ireland", "Coleraine", "Newbridge", "Balbriggan",
+    "Portlaoise", "Athlone", "Mullingar", "Letterkenny", "Greystones",
+    "Wexford", "Portadown", "Sligo", "Celbridge", "Omagh", "Larne",
+    "Malahide", "Clonmel", "Carrigaline", "Banbridge", "Maynooth",
+    "Leixlip", "Armagh", "Dungannon", "Ashbourne, Meath", "Laytown",
+    "Tullamore", "Killarney", "Cobh", "Enniskillen", "Midleton",
+    "Strabane", "Mallow", "Arklow", "Castlebar", "Wicklow",
+]
+
+
+@app.route("/api/admin/seed", methods=["POST"])
+def api_admin_seed():
+    body = request.get_json(silent=True) or {}
+    seed_secret = os.environ.get("SEED_SECRET", "")
+    if not seed_secret or body.get("secret") != seed_secret:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    def _run() -> None:
+        try:
+            db.init_nominatim_cache()
+        except Exception as exc:
+            print(f"[seed] init error: {exc}", flush=True)
+            return
+        ok, failed = 0, []
+        for town in _SEED_TOWNS:
+            try:
+                place = nominatim.search_place(town)
+                if place is None:
+                    print(f"[seed] NOT FOUND: {town}", flush=True)
+                    failed.append(town)
+                else:
+                    print(f"[seed] OK: {town}", flush=True)
+                    ok += 1
+            except Exception as exc:
+                print(f"[seed] ERROR: {town} — {exc}", flush=True)
+                failed.append(town)
+        print(f"[seed] Done. {ok} cached, {len(failed)} failed.", flush=True)
+
+    threading.Thread(target=_run, daemon=True).start()
+    return jsonify({"status": "seeding started", "towns": len(_SEED_TOWNS)}), 202
 
 
 if __name__ == "__main__":

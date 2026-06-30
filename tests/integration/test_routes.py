@@ -209,6 +209,33 @@ class TestLeaderboardRoute:
         assert data["leaderboard"][0]["species_count"] is None
 
 
+class TestAdminSeedRoute:
+    def test_missing_secret_returns_401(self, client, monkeypatch):
+        monkeypatch.setenv("SEED_SECRET", "correct-secret")
+        res = client.post("/api/admin/seed", json={})
+        assert res.status_code == 401
+
+    def test_wrong_secret_returns_401(self, client, monkeypatch):
+        monkeypatch.setenv("SEED_SECRET", "correct-secret")
+        res = client.post("/api/admin/seed", json={"secret": "wrong"})
+        assert res.status_code == 401
+
+    def test_no_seed_secret_env_var_returns_401(self, client, monkeypatch):
+        monkeypatch.delenv("SEED_SECRET", raising=False)
+        res = client.post("/api/admin/seed", json={"secret": "anything"})
+        assert res.status_code == 401
+
+    def test_correct_secret_returns_202(self, client, monkeypatch):
+        monkeypatch.setenv("SEED_SECRET", "correct-secret")
+        with patch("app.threading.Thread") as mock_thread:
+            mock_thread.return_value.start = lambda: None
+            res = client.post("/api/admin/seed", json={"secret": "correct-secret"})
+        assert res.status_code == 202
+        data = res.get_json()
+        assert data["status"] == "seeding started"
+        assert data["towns"] == 60
+
+
 class TestLeaderboardCachedRoute:
     def test_returns_empty_when_no_cache(self, client):
         with patch("app.db.load_cache", return_value=None):
