@@ -101,7 +101,7 @@ export default function SearchPage() {
           </p>
         )}
 
-        <Map bbox={place?.bbox ?? null} />
+        <Map bbox={place?.bbox ?? null} geojson={place?.geojson ?? null} />
 
         <div className={styles.backRow}>
           <label htmlFor="back-days" className={styles.backLabel}>Days back:</label>

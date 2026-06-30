@@ -9,6 +9,7 @@ export interface PlaceResult {
   bbox: [number, number, number, number];
   center_lat: number;
   center_lon: number;
+  geojson: Record<string, unknown> | null;
 }
 
 export interface SpeciesResult {
