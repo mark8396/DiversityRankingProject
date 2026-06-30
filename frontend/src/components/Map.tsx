@@ -39,7 +39,7 @@ export default function Map({ bbox, geojson }: Props) {
       if (!bbox) return;
 
       if (geojson) {
-        const layer = L.geoJSON(geojson as Parameters<typeof L.geoJSON>[0], { style: LAYER_STYLE });
+        const layer = L.geoJSON(geojson as unknown as Parameters<typeof L.geoJSON>[0], { style: LAYER_STYLE });
         layer.addTo(mapRef.current!);
         layerRef.current = layer as unknown as typeof layerRef.current;
         mapRef.current!.fitBounds(layer.getBounds(), { padding: [20, 20] });
