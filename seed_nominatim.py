@@ -23,14 +23,14 @@ import core.nominatim as nominatim
 
 TOWNS = [
     "Dublin", "Belfast", "Cork", "Limerick", "Galway", "Derry",
-    "Newtownabbey", "Bangor", "Waterford", "Lisburn", "Drogheda",
-    "Dundalk", "Swords", "Navan", "Bray", "Ballymena", "Newtownards",
+    "Newtownabbey", "Bangor, Northern Ireland", "Waterford", "Lisburn", "Drogheda",
+    "Dundalk", "Swords", "Navan, Ireland", "Bray, Wicklow", "Ballymena", "Newtownards",
     "Lurgan", "Carrickfergus", "Ennis", "Newry", "Carlow", "Kilkenny",
-    "Naas", "Tralee", "Antrim", "Coleraine", "Newbridge", "Balbriggan",
+    "Naas", "Tralee", "Antrim, Northern Ireland", "Coleraine", "Newbridge", "Balbriggan",
     "Portlaoise", "Athlone", "Mullingar", "Letterkenny", "Greystones",
     "Wexford", "Portadown", "Sligo", "Celbridge", "Omagh", "Larne",
     "Malahide", "Clonmel", "Carrigaline", "Banbridge", "Maynooth",
-    "Leixlip", "Armagh", "Dungannon", "Ashbourne", "Laytown",
+    "Leixlip", "Armagh", "Dungannon", "Ashbourne, Meath", "Laytown",
     "Tullamore", "Killarney", "Cobh", "Enniskillen", "Midleton",
     "Strabane", "Mallow", "Arklow", "Castlebar", "Wicklow",
 ]
