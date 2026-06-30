@@ -165,3 +165,59 @@ class TestLeaderboardRoute:
         data = res.get_json()
         counts = [r["species_count"] for r in data["leaderboard"] if r.get("species_count") is not None]
         assert counts == sorted(counts, reverse=True)
+
+    def test_saves_to_cache_after_build(self, client):
+        with patch("app.nominatim.search_place", return_value=SKIBBEREEN_PLACE):
+            with patch("app.ebird.get_observations_in_area", return_value=SAMPLE_OBS):
+                with patch("app.db.save_cache") as mock_save:
+                    client.post("/api/leaderboard", json={"towns": ["Skibbereen"], "back": 14})
+        mock_save.assert_called_once()
+        assert mock_save.call_args[0][0] == 14  # back_days passed correctly
+
+    def test_cache_write_failure_does_not_break_response(self, client):
+        with patch("app.nominatim.search_place", return_value=SKIBBEREEN_PLACE):
+            with patch("app.ebird.get_observations_in_area", return_value=SAMPLE_OBS):
+                with patch("app.db.save_cache", side_effect=Exception("DB down")):
+                    res = client.post("/api/leaderboard", json={"towns": ["Skibbereen"], "back": 30})
+        assert res.status_code == 200
+
+
+class TestLeaderboardCachedRoute:
+    def test_returns_empty_when_no_cache(self, client):
+        with patch("app.db.load_cache", return_value=None):
+            res = client.get("/api/leaderboard/cached?back=30")
+        assert res.status_code == 200
+        data = res.get_json()
+        assert data["leaderboard"] == []
+        assert data["updated_at"] is None
+        assert data["back_days"] == 30
+
+    def test_returns_cached_rows(self, client):
+        cached = {
+            "leaderboard": [{"rank": 1, "town": "Dublin", "species_count": 80}],
+            "back_days": 7,
+            "updated_at": "2026-06-30T12:00:00",
+        }
+        with patch("app.db.load_cache", return_value=cached):
+            res = client.get("/api/leaderboard/cached?back=7")
+        assert res.status_code == 200
+        data = res.get_json()
+        assert len(data["leaderboard"]) == 1
+        assert data["leaderboard"][0]["town"] == "Dublin"
+        assert data["updated_at"] == "2026-06-30T12:00:00"
+
+    def test_db_error_returns_empty(self, client):
+        with patch("app.db.load_cache", side_effect=Exception("DB down")):
+            res = client.get("/api/leaderboard/cached?back=30")
+        assert res.status_code == 200
+        data = res.get_json()
+        assert data["leaderboard"] == []
+
+    def test_invalid_back_returns_400(self, client):
+        res = client.get("/api/leaderboard/cached?back=notanumber")
+        assert res.status_code == 400
+
+    def test_defaults_back_to_30(self, client):
+        with patch("app.db.load_cache", return_value=None) as mock_load:
+            client.get("/api/leaderboard/cached")
+        mock_load.assert_called_once_with(30)

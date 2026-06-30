@@ -9,6 +9,7 @@ load_dotenv()
 
 import core.nominatim as nominatim
 import core.ebird as ebird
+import core.db as db
 from core.geo_utils import bbox_centroid, bbox_radius_km
 
 app = Flask(__name__)
@@ -68,6 +69,23 @@ def api_species():
     })
 
 
+@app.route("/api/leaderboard/cached")
+def api_leaderboard_cached():
+    try:
+        back = int(request.args.get("back", 30))
+    except ValueError:
+        return jsonify({"error": "'back' must be an integer"}), 400
+
+    try:
+        cached = db.load_cache(back)
+    except Exception:
+        cached = None
+
+    if cached is None:
+        return jsonify({"leaderboard": [], "back_days": back, "updated_at": None})
+    return jsonify(cached)
+
+
 @app.route("/api/leaderboard", methods=["POST"])
 def api_leaderboard():
     body = request.get_json(silent=True) or {}
@@ -101,6 +119,11 @@ def api_leaderboard():
     results.sort(key=lambda r: (r["species_count"] is None, -(r["species_count"] or 0)))
     for i, row in enumerate(results, 1):
         row["rank"] = i
+
+    try:
+        db.save_cache(back, results)
+    except Exception:
+        pass  # Cache write failure is non-fatal
 
     return jsonify({"leaderboard": results, "back_days": back})
 
