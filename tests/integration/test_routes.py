@@ -72,6 +72,7 @@ class TestSearchRoute:
         assert "bbox" in data
         assert "center_lat" in data
         assert "center_lon" in data
+        assert "geojson" in data
 
     def test_happy_path_centroid_inside_bbox(self, client):
         with patch("app.nominatim.search_place", return_value=SKIBBEREEN_PLACE):

@@ -39,6 +39,7 @@ def api_search():
         "bbox": place["bbox"],
         "center_lat": center_lat,
         "center_lon": center_lon,
+        "geojson": place.get("geojson"),
     })
 
 
