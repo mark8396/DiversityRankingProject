@@ -15,6 +15,11 @@ from core.geo_utils import bbox_centroid, bbox_radius_km
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:3000", r"https://.*\.vercel\.app"])
 
+try:
+    db.init_nominatim_cache()
+except Exception:
+    pass  # non-fatal: DATABASE_URL not set in test environments
+
 
 @app.route("/api/search")
 def api_search():

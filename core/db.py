@@ -54,3 +54,59 @@ def save_cache(back_days: int, leaderboard_rows: list) -> None:
         conn.commit()
     finally:
         conn.close()
+
+
+def init_nominatim_cache() -> None:
+    """Create the nominatim_cache table if it does not already exist."""
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS nominatim_cache (
+                    name_key   TEXT      PRIMARY KEY,
+                    place_data TEXT      NOT NULL,
+                    cached_at  TIMESTAMP NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def load_place(name_key: str) -> dict | None:
+    """Return the cached place dict for name_key, or None if not in DB."""
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT place_data FROM nominatim_cache WHERE name_key = %s",
+                (name_key,),
+            )
+            row = cur.fetchone()
+        if row is None:
+            return None
+        return json.loads(row[0])
+    finally:
+        conn.close()
+
+
+def save_place(name_key: str, place: dict) -> None:
+    """Upsert a geocoded place dict into the nominatim_cache table."""
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO nominatim_cache (name_key, place_data, cached_at)
+                VALUES (%s, %s, NOW())
+                ON CONFLICT (name_key) DO UPDATE
+                  SET place_data = EXCLUDED.place_data,
+                      cached_at  = EXCLUDED.cached_at
+                """,
+                (name_key, json.dumps(place)),
+            )
+        conn.commit()
+    finally:
+        conn.close()

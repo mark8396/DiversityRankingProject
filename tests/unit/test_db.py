@@ -99,3 +99,94 @@ class TestSaveCache:
         with patch("core.db.get_connection", return_value=mock_conn):
             db.save_cache(30, [])
         mock_conn.close.assert_called_once()
+
+
+class TestNominatimCache:
+    # --- init_nominatim_cache ---
+
+    def test_init_creates_table(self):
+        mock_conn, mock_cur = make_mock_conn()
+        with patch("core.db.get_connection", return_value=mock_conn):
+            db.init_nominatim_cache()
+        sql = mock_cur.execute.call_args[0][0]
+        assert "CREATE TABLE IF NOT EXISTS nominatim_cache" in sql
+
+    def test_init_commits(self):
+        mock_conn, _ = make_mock_conn()
+        with patch("core.db.get_connection", return_value=mock_conn):
+            db.init_nominatim_cache()
+        mock_conn.commit.assert_called_once()
+
+    def test_init_closes_connection(self):
+        mock_conn, _ = make_mock_conn()
+        with patch("core.db.get_connection", return_value=mock_conn):
+            db.init_nominatim_cache()
+        mock_conn.close.assert_called_once()
+
+    # --- load_place ---
+
+    def test_load_place_returns_none_on_miss(self):
+        mock_conn, _ = make_mock_conn(fetchone_return=None)
+        with patch("core.db.get_connection", return_value=mock_conn):
+            result = db.load_place("skibbereen")
+        assert result is None
+
+    def test_load_place_returns_dict_when_found(self):
+        place = {"display_name": "Skibbereen", "bbox": [51.5, 51.6, -9.3, -9.2], "geojson": None}
+        mock_conn, _ = make_mock_conn(fetchone_return=(json.dumps(place),))
+        with patch("core.db.get_connection", return_value=mock_conn):
+            result = db.load_place("skibbereen")
+        assert result == place
+
+    def test_load_place_queries_with_correct_key(self):
+        mock_conn, mock_cur = make_mock_conn(fetchone_return=None)
+        with patch("core.db.get_connection", return_value=mock_conn):
+            db.load_place("dublin")
+        call_args = mock_cur.execute.call_args[0]
+        assert call_args[1] == ("dublin",)
+
+    def test_load_place_closes_connection_on_success(self):
+        mock_conn, _ = make_mock_conn(fetchone_return=None)
+        with patch("core.db.get_connection", return_value=mock_conn):
+            db.load_place("cork")
+        mock_conn.close.assert_called_once()
+
+    def test_load_place_closes_connection_on_error(self):
+        mock_conn, mock_cur = make_mock_conn()
+        mock_cur.execute.side_effect = Exception("DB error")
+        with patch("core.db.get_connection", return_value=mock_conn):
+            with pytest.raises(Exception, match="DB error"):
+                db.load_place("galway")
+        mock_conn.close.assert_called_once()
+
+    # --- save_place ---
+
+    def test_save_place_executes_upsert(self):
+        mock_conn, mock_cur = make_mock_conn()
+        place = {"display_name": "Dublin", "bbox": [53.2, 53.4, -6.4, -6.1], "geojson": None}
+        with patch("core.db.get_connection", return_value=mock_conn):
+            db.save_place("dublin", place)
+        sql = mock_cur.execute.call_args[0][0]
+        assert "INSERT INTO nominatim_cache" in sql
+        assert "ON CONFLICT (name_key) DO UPDATE" in sql
+
+    def test_save_place_serialises_place_as_json(self):
+        mock_conn, mock_cur = make_mock_conn()
+        place = {"display_name": "Limerick", "bbox": [52.6, 52.7, -8.7, -8.5], "geojson": None}
+        with patch("core.db.get_connection", return_value=mock_conn):
+            db.save_place("limerick", place)
+        params = mock_cur.execute.call_args[0][1]
+        assert params[0] == "limerick"
+        assert json.loads(params[1]) == place
+
+    def test_save_place_commits(self):
+        mock_conn, _ = make_mock_conn()
+        with patch("core.db.get_connection", return_value=mock_conn):
+            db.save_place("galway", {"display_name": "Galway", "bbox": [], "geojson": None})
+        mock_conn.commit.assert_called_once()
+
+    def test_save_place_closes_connection(self):
+        mock_conn, _ = make_mock_conn()
+        with patch("core.db.get_connection", return_value=mock_conn):
+            db.save_place("galway", {"display_name": "Galway", "bbox": [], "geojson": None})
+        mock_conn.close.assert_called_once()
