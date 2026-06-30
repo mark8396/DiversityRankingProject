@@ -2,8 +2,12 @@ services:
   - type: web
     name: bird-diversity-ranking
     env: python
+    runtime: python
+    pythonVersion: "3.12"
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
       - key: EBIRD_API_KEY
+        sync: false
+      - key: DATABASE_URL
         sync: false
