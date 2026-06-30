@@ -20,22 +20,6 @@
   line-height: 1.5;
 }
 
-.textarea {
-  width: 100%;
-  padding: 0.65rem 0.85rem;
-  border: 1px solid var(--color-border);
-  border-radius: 5px;
-  font-size: 0.9rem;
-  font-family: inherit;
-  color: var(--color-text);
-  resize: vertical;
-}
-
-.textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(97, 117, 45, 0.15);
-}
 
 .controls {
   display: flex;
@@ -57,13 +41,21 @@
   white-space: nowrap;
 }
 
-.backInput {
-  width: 72px;
+.backSelect {
   padding: 0.4rem 0.5rem;
   border: 1px solid var(--color-border);
   border-radius: 5px;
   font-size: 0.9rem;
   font-family: inherit;
+  background: var(--color-card);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.backSelect:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(97, 117, 45, 0.15);
 }
 
 .btn {
@@ -85,6 +77,12 @@
 .btn:disabled {
   background: #aab89a;
   cursor: default;
+}
+
+.updatedAt {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  margin-top: 0.6rem;
 }
 
 .status {
